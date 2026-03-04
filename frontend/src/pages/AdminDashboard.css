@@ -1,0 +1,160 @@
+.admin-page {
+  min-height: 100vh;
+  padding: 2rem;
+  background: #070b14;
+  color: #fff;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.admin-header h1 {
+  margin: 0;
+}
+
+.admin-header p {
+  margin: 0.3rem 0 0;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.ghost-btn,
+.danger-btn {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #fff;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.danger-btn {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.admin-error {
+  margin-bottom: 1rem;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  color: #fca5a5;
+}
+
+.admin-loading {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(170px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-stat-card {
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.admin-stat-card h3 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.admin-stat-card p {
+  margin: 0.5rem 0 0;
+  font-size: 1.5rem;
+  color: #4fc3f7;
+  font-weight: 700;
+}
+
+.admin-users {
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.admin-users h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: 0.65rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.86rem;
+}
+
+.admin-table th {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.admin-table input,
+.admin-table select {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+}
+
+.inline-fields,
+.inline-actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.save-btn,
+.cancel-btn,
+.edit-btn,
+.delete-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0.38rem 0.62rem;
+  cursor: pointer;
+}
+
+.save-btn {
+  background: #22c55e;
+  color: #0b121f;
+}
+
+.cancel-btn {
+  background: #475569;
+  color: #fff;
+}
+
+.edit-btn {
+  background: #4fc3f7;
+  color: #0b121f;
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: #fff;
+}
