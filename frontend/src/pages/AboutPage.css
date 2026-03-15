@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+.about-page {
+  min-height: 100vh;
+  background: #070b14;
+  color: #fff;
+  padding: 2rem;
+  font-family: 'Exo 2', sans-serif;
+}
+
+.about-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.about-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.about-header p {
+  margin: 0.3rem 0 0;
+  color: rgba(255,255,255,0.6);
+}
+
+.about-back {
+  border: 1px solid rgba(79,195,247,0.25);
+  background: rgba(79,195,247,0.1);
+  color: #4fc3f7;
+  border-radius: 10px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.about-card {
+  background: #0d1117;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.about-card h2,
+.about-card h3 {
+  margin-top: 0;
+  color: #4fc3f7;
+}
+
+.about-card p {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+}

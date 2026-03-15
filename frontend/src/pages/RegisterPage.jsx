@@ -189,12 +189,17 @@ const RegisterPage = () => {
           </div>
 
           <div className="panel-content">
-            <h1 className="panel-headline">Join the<br /><span className="highlight-text">Smart Grid</span></h1>
+            <h1 className="panel-headline">Welcome to<br /><span className="highlight-text">SmartHome</span></h1>
             <p className="panel-description">
-              Create your account and start managing your home's energy with AI-powered intelligence.
+              Start your energy journey with smart monitoring, automation, and insights.
             </p>
             <div className="feature-list">
-              {['Free account setup', 'Connect unlimited devices', 'Real-time analytics', '24/7 support access'].map((f, i) => (
+              {[
+                '“What gets measured gets managed.”',
+                '“Save power today, secure energy tomorrow.”',
+                '“Efficiency is the cheapest energy.”',
+                '“Smart use is sustainable use.”',
+              ].map((f, i) => (
                 <div key={i} className="feature-item" style={{ animationDelay: `${i * 0.15}s` }}>
                   <div className="feature-dot" />
                   <span>{f}</span>

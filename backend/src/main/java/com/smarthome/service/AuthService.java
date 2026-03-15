@@ -4,7 +4,11 @@ import com.smarthome.dto.*;
 import com.smarthome.model.EmailVerificationToken;
 import com.smarthome.model.PasswordResetToken;
 import com.smarthome.model.User;
+import com.smarthome.repository.DeviceRepository;
+import com.smarthome.repository.DeviceScheduleRepository;
 import com.smarthome.repository.EmailVerificationTokenRepository;
+import com.smarthome.repository.EnergyUsageLogRepository;
+import com.smarthome.repository.NotificationRepository;
 import com.smarthome.repository.PasswordResetTokenRepository;
 import com.smarthome.repository.UserRepository;
 import com.smarthome.security.JwtUtil;
@@ -34,6 +38,10 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final EmailService emailService;
+    private final DeviceRepository deviceRepository;
+    private final DeviceScheduleRepository deviceScheduleRepository;
+    private final EnergyUsageLogRepository energyUsageLogRepository;
+    private final NotificationRepository notificationRepository;
 
     @Value("${app.reset-code.expiry-ms:600000}")
     private long resetCodeExpiryMs;
@@ -91,7 +99,13 @@ public class AuthService {
         }
 
         if (user.getProvider() == User.AuthProvider.GOOGLE) {
-            throw new RuntimeException("This account uses Google Sign-In. Please sign in with Google.");
+            if (request.getPassword() == null || request.getPassword().isBlank()) {
+                throw new RuntimeException("Password is required.");
+            }
+            if (user.getPassword() == null || user.getPassword().isBlank()) {
+                user.setPassword(passwordEncoder.encode(request.getPassword()));
+                userRepository.save(user);
+            }
         }
         if (!user.isEmailVerified()) {
             throw new RuntimeException("Please verify your email before logging in.");
@@ -282,6 +296,54 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return mapToUserDto(user);
+    }
+
+    @Transactional
+    public UserResponseDto updateProfile(String email, UserProfileUpdateRequestDto request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (request == null) {
+            throw new RuntimeException("Profile data is required");
+        }
+        String firstName = request.getFirstName() != null ? request.getFirstName().trim() : "";
+        String lastName = request.getLastName() != null ? request.getLastName().trim() : "";
+        if (firstName.isEmpty() || lastName.isEmpty()) {
+            throw new RuntimeException("First name and last name are required");
+        }
+
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        User saved = userRepository.save(user);
+        return mapToUserDto(saved);
+    }
+
+    @Transactional
+    public ApiResponseDto deleteAccount(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() == User.Role.ADMIN) {
+            throw new RuntimeException("Admin account cannot be deleted here.");
+        }
+
+        Long userId = user.getId();
+        var deviceIds = deviceRepository.findByUserId(userId).stream()
+                .map(device -> device.getId())
+                .toList();
+
+        if (!deviceIds.isEmpty()) {
+            energyUsageLogRepository.deleteByDeviceIdIn(deviceIds);
+            deviceScheduleRepository.deleteByDeviceIdIn(deviceIds);
+        }
+        deviceScheduleRepository.deleteByUserId(userId);
+        notificationRepository.deleteByUserId(userId);
+        emailVerificationTokenRepository.deleteAllByEmail(email);
+        tokenRepository.deleteAllByEmail(email);
+        deviceRepository.deleteByUserId(userId);
+        userRepository.delete(user);
+
+        return new ApiResponseDto(true, "Account deleted successfully");
     }
 
     // ========== HELPER: Generate 6-digit code ==========

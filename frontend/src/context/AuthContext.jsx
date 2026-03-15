@@ -64,6 +64,14 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
+  const updateUser = (updates) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...(updates || {}) };
+      localStorage.setItem('user_data', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const logout = () => {
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('user_data');
@@ -72,7 +80,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, login, updateUser, logout, loading, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { deviceService } from '../services/deviceService';
+import { scheduleService } from '../services/scheduleService';
 import './DevicesPage.css';
 
 const DevicesPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isTechnician = user?.role === 'TECHNICIAN';
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingDevice, setEditingDevice] = useState(null);
+  const [scheduleDevice, setScheduleDevice] = useState(null);
+  const [schedules, setSchedules] = useState([]);
+  const [scheduleForm, setScheduleForm] = useState({
+    action: 'ON',
+    time: '18:00',
+    days: [],
+    enabled: true,
+  });
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -19,6 +31,7 @@ const DevicesPage = () => {
 
   const deviceTypes = ['AC', 'Light', 'Refrigerator', 'Water Heater', 'TV', 'Washing Machine', 'Microwave', 'Fan', 'Heater', 'Other'];
   const rooms = ['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Garage', 'Office', 'Dining Room', 'Other'];
+  const weekDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
   useEffect(() => {
     fetchDevices();
@@ -58,6 +71,56 @@ const DevicesPage = () => {
     setFormData({ name: '', type: '', powerRating: '', room: '' });
     setError('');
   };
+
+  const handleOpenSchedule = async (device) => {
+    setScheduleDevice(device);
+    setScheduleForm({ action: 'ON', time: '18:00', days: [], enabled: true });
+    try {
+      const data = await scheduleService.getSchedulesByDevice(device.id);
+      setSchedules(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message || 'Failed to load schedules');
+    }
+  };
+
+  const handleCloseSchedule = () => {
+    setScheduleDevice(null);
+    setSchedules([]);
+    setScheduleForm({ action: 'ON', time: '18:00', days: [], enabled: true });
+  };
+
+
+  const handleCreateSchedule = async (e) => {
+    e.preventDefault();
+    if (!scheduleDevice) return;
+    try {
+      const payload = {
+        deviceId: scheduleDevice.id,
+        action: scheduleForm.action,
+        time: scheduleForm.time,
+        daysOfWeek: scheduleForm.days.join(','),
+        enabled: true,
+      };
+      await scheduleService.createSchedule(payload);
+      const data = await scheduleService.getSchedulesByDevice(scheduleDevice.id);
+      setSchedules(Array.isArray(data) ? data : []);
+      setScheduleForm({ action: 'ON', time: '18:00', days: [], enabled: true });
+    } catch (err) {
+      setError(err.message || 'Failed to create schedule');
+    }
+  };
+
+  const handleDeleteSchedule = async (id) => {
+    if (!window.confirm('Delete this schedule?')) return;
+    try {
+      await scheduleService.deleteSchedule(id);
+      const data = await scheduleService.getSchedulesByDevice(scheduleDevice.id);
+      setSchedules(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message || 'Failed to delete schedule');
+    }
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -138,13 +201,21 @@ const DevicesPage = () => {
           <p className="page-subtitle">Manage your smart home devices</p>
           </div>
         </div>
-        <button className="btn-primary" onClick={() => handleOpenModal()}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-          </svg>
-          Add Device
-        </button>
+        {!isTechnician && (
+          <button className="btn-primary" onClick={() => handleOpenModal()}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+            Add Device
+          </button>
+        )}
       </div>
+
+      {isTechnician && (
+        <div className="info-banner">
+          Technician access is read-only. Device changes are disabled.
+        </div>
+      )}
 
       {error && (
         <div className="error-alert">
@@ -176,6 +247,7 @@ const DevicesPage = () => {
                     className="icon-btn"
                     onClick={() => handleOpenModal(device)}
                     title="Edit device"
+                    disabled={isTechnician}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
@@ -185,9 +257,20 @@ const DevicesPage = () => {
                     className="icon-btn delete-btn"
                     onClick={() => handleDelete(device.id)}
                     title="Delete device"
+                    disabled={isTechnician}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                  </button>
+                  <button
+                    className="icon-btn"
+                    onClick={() => handleOpenSchedule(device)}
+                    title="Schedule device"
+                    disabled={isTechnician}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 8v5l4 2 .75-1.23-3.25-1.77V8H12zm0-6C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
                     </svg>
                   </button>
                 </div>
@@ -215,6 +298,7 @@ const DevicesPage = () => {
                     type="checkbox"
                     checked={device.status === 'ON'}
                     onChange={() => handleToggle(device.id)}
+                    disabled={isTechnician}
                   />
                   <span className="toggle-slider" />
                 </label>
@@ -301,6 +385,91 @@ const DevicesPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Modal */}
+      {scheduleDevice && (
+        <div className="modal-overlay" onClick={handleCloseSchedule}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Schedule: {scheduleDevice.name}</h2>
+              <button className="modal-close" onClick={handleCloseSchedule}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSchedule} className="modal-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Action</label>
+                  <select
+                    value={scheduleForm.action}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, action: e.target.value })}
+                  >
+                    <option value="ON">ON</option>
+                    <option value="OFF">OFF</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Time</label>
+                  <input
+                    type="time"
+                    value={scheduleForm.time}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, time: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Days</label>
+                <div className="days-grid">
+                  {weekDays.map((day) => (
+                    <label key={day} className={`day-pill ${scheduleForm.days.includes(day) ? 'active' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={scheduleForm.days.includes(day)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...scheduleForm.days, day]
+                            : scheduleForm.days.filter((d) => d !== day);
+                          setScheduleForm({ ...scheduleForm, days: next });
+                        }}
+                      />
+                      {day}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={handleCloseSchedule}>
+                  Close
+                </button>
+                <button type="submit" className="btn-primary">Add Schedule</button>
+              </div>
+            </form>
+
+            <div className="schedule-list">
+              <h3>Existing Schedules</h3>
+              {schedules.length === 0 && <p className="muted">No schedules created.</p>}
+              {schedules.map((s) => (
+                <div key={s.id} className="schedule-row">
+                  <div>
+                    <div className="schedule-title">{s.action} at {s.time}</div>
+                    <div className="schedule-sub">{s.daysOfWeek || 'Everyday'}</div>
+                  </div>
+                  <div className="schedule-actions">
+                    <span className="schedule-toggle on">Enabled</span>
+                    <button className="schedule-delete" onClick={() => handleDeleteSchedule(s.id)}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

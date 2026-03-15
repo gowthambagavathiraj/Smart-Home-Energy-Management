@@ -94,6 +94,23 @@ export const authService = {
     return handleResponse(response);
   },
 
+  updateProfile: async (profileData) => {
+    const response = await fetch(`${API_BASE_URL}/user/profile`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(profileData),
+    });
+    return handleResponse(response);
+  },
+
+  deleteAccount: async () => {
+    const response = await fetch(`${API_BASE_URL}/user`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   logout: () => {
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('user_data');

@@ -4,6 +4,38 @@ A full-stack web application for managing home energy devices with real-time mon
 
 ---
 
+## 📘 System Overview
+
+The Smart Home Energy Management System helps households monitor, analyze, and optimize electricity consumption. Users can track appliance-level usage, estimate costs, automate device operations, and receive recommendations to reduce energy use.
+
+The platform supports three roles:
+
+- **Admin**: Manages users, devices, analytics, and system settings such as energy rate, peak hours, and alert thresholds. Admins monitor overall trends and device health.
+- **Homeowner**: Uses dashboards to track usage, costs, and automation for their home.
+- **Technician**: Installs and maintains IoT devices, verifies readings, and resolves hardware or sensor issues.
+
+### Current & Energy Calculations
+
+Power and current are derived from:
+
+P = V × I
+
+Where:
+P = Power (watts), V = Voltage (volts), I = Current (amps)
+
+Current:
+I = P / V
+
+Example: 1500W AC at 230V → 1500 / 230 ≈ 6.52 A
+
+Energy:
+Energy = Power × Time
+
+Example: 1.5 kW × 5 hours = 7.5 kWh  
+Cost at ₹7/unit → 7.5 × 7 = ₹52.5
+
+---
+
 ## 🏗️ Tech Stack
 
 | Layer | Technology |
@@ -133,7 +165,7 @@ npm start
 - Passwords hashed with BCrypt (strength 10)
 - OTP codes are 6-digit, expire in 10 minutes, single-use
 - Passwords must match `^[a-zA-Z0-9]+$` (validated on both frontend and backend)
-- Google OAuth users cannot use password login
+- Google OAuth users can also use password login (optional password set on first local login)
 - Expired tokens cleaned up hourly via @Scheduled
 
 ---

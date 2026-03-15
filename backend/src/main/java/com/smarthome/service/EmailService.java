@@ -85,6 +85,50 @@ public class EmailService {
         }
     }
 
+    @Async
+    public void sendEnergyAlert(String toEmail, String firstName, double energyUsed, int windowMinutes) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, "SmartHome Energy System");
+            helper.setTo(toEmail);
+            helper.setSubject("Energy Overload Alert");
+
+            String htmlContent = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="UTF-8">
+                  <title>Energy Alert</title>
+                </head>
+                <body style="margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;background-color:#070b14;">
+                  <div style="max-width:560px;margin:40px auto;background:#0d1117;border-radius:20px;overflow:hidden;border:1px solid rgba(239,68,68,0.25);">
+                    <div style="background:linear-gradient(135deg,#2a0f0f,#1b0b0b);padding:30px;text-align:center;">
+                      <h1 style="color:#fff;font-size:22px;font-weight:700;margin:0;">Energy Overload Alert</h1>
+                      <p style="color:#fca5a5;font-size:12px;margin:6px 0 0;">Immediate attention recommended</p>
+                    </div>
+                    <div style="padding:30px 36px;">
+                      <p style="color:rgba(255,255,255,0.85);font-size:16px;margin:0 0 8px;">Hello, <strong style="color:#f87171;">%s</strong></p>
+                      <p style="color:rgba(255,255,255,0.55);font-size:14px;line-height:1.6;margin:0 0 16px;">
+                        Your energy usage reached <strong style="color:#f87171;">%.2f kWh</strong> in the last %d minutes.
+                      </p>
+                      <p style="color:rgba(255,255,255,0.55);font-size:14px;line-height:1.6;margin:0;">
+                        Consider turning off high-usage devices or shifting usage to off-peak hours.
+                      </p>
+                    </div>
+                  </div>
+                </body>
+                </html>
+                """.formatted(firstName, energyUsed, windowMinutes);
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            log.error("Failed to send energy alert email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
     private String buildResetEmailHtml(String firstName, String resetCode) {
         return """
             <!DOCTYPE html>

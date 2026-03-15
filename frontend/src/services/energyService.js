@@ -33,4 +33,11 @@ export const energyService = {
     });
     return handleResponse(response);
   },
+
+  getAnalytics: async () => {
+    const response = await fetch(`${API_BASE_URL}/energy/analytics`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
 };

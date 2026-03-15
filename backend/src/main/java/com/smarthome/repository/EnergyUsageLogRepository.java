@@ -33,4 +33,15 @@ public interface EnergyUsageLogRepository extends JpaRepository<EnergyUsageLog, 
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    @Query("SELECT COALESCE(SUM(e.energyUsed), 0) FROM EnergyUsageLog e")
+    Double sumTotalEnergyUsed();
+
+    @Query("SELECT COALESCE(SUM(e.energyUsed), 0) FROM EnergyUsageLog e WHERE e.timestamp BETWEEN :start AND :end")
+    Double sumEnergyUsedBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    void deleteByDeviceIdIn(List<Long> deviceIds);
 }

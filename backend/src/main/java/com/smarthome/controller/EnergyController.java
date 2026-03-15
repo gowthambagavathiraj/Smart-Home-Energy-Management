@@ -1,5 +1,6 @@
 package com.smarthome.controller;
 
+import com.smarthome.dto.EnergyAnalyticsResponseDto;
 import com.smarthome.dto.EnergyConsumptionResponseDto;
 import com.smarthome.dto.RealtimeUsageResponseDto;
 import com.smarthome.service.EnergyTrackingService;
@@ -40,5 +41,15 @@ public class EnergyController {
     ) {
         String email = authentication.getName();
         return ResponseEntity.ok(energyTrackingService.getConsumption(email, period, points));
+    }
+
+    /**
+     * GET /api/energy/analytics
+     * Returns daily/weekly/monthly trends, comparisons, predictions, and peak/off-peak usage.
+     */
+    @GetMapping("/analytics")
+    public ResponseEntity<EnergyAnalyticsResponseDto> getAnalytics(Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(energyTrackingService.getAnalytics(email));
     }
 }

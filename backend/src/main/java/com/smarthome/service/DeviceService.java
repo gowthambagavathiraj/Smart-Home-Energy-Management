@@ -27,13 +27,14 @@ public class DeviceService {
     private final EnergyUsageLogRepository energyLogRepository;
     private final UserRepository userRepository;
 
-    private static final double COST_PER_KWH = 0.12; // $0.12 per kWh (configurable)
+    private static final double COST_PER_KWH = 6.0; // ₹ per kWh (configurable)
 
     // ========== CREATE DEVICE ==========
     @Transactional
     public DeviceResponseDto createDevice(String email, DeviceCreateRequestDto request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureNotTechnician(user);
 
         Device device = Device.builder()
                 .name(request.getName())
@@ -61,6 +62,14 @@ public class DeviceService {
                 .collect(Collectors.toList());
     }
 
+    // ========== ADMIN: GET DEVICES BY USER ID ==========
+    public List<DeviceResponseDto> getUserDevicesById(Long userId) {
+        List<Device> devices = deviceRepository.findByUserId(userId);
+        return devices.stream()
+                .map(this::mapToDeviceDto)
+                .collect(Collectors.toList());
+    }
+
     // ========== GET SINGLE DEVICE ==========
     public DeviceResponseDto getDevice(String email, Long deviceId) {
         User user = userRepository.findByEmail(email)
@@ -77,6 +86,7 @@ public class DeviceService {
     public DeviceResponseDto updateDevice(String email, Long deviceId, DeviceUpdateRequestDto request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureNotTechnician(user);
 
         Device device = deviceRepository.findByIdAndUserId(deviceId, user.getId())
                 .orElseThrow(() -> new RuntimeException("Device not found or access denied"));
@@ -109,6 +119,7 @@ public class DeviceService {
     public void deleteDevice(String email, Long deviceId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureNotTechnician(user);
 
         if (!deviceRepository.existsByIdAndUserId(deviceId, user.getId())) {
             throw new RuntimeException("Device not found or access denied");
@@ -123,6 +134,7 @@ public class DeviceService {
     public DeviceResponseDto toggleDeviceStatus(String email, Long deviceId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureNotTechnician(user);
 
         Device device = deviceRepository.findByIdAndUserId(deviceId, user.getId())
                 .orElseThrow(() -> new RuntimeException("Device not found or access denied"));
@@ -157,8 +169,27 @@ public class DeviceService {
                 .collect(Collectors.toList());
     }
 
+    // ========== ADMIN: GET DEVICE ENERGY LOGS ==========
+    public List<EnergyUsageLogResponseDto> getDeviceEnergyLogsByUserId(Long userId, Long deviceId, LocalDateTime start, LocalDateTime end) {
+        Device device = findUserDevice(userId, deviceId);
+
+        List<EnergyUsageLog> logs;
+        if (start != null && end != null) {
+            logs = energyLogRepository.findByDeviceIdAndTimestampBetweenOrderByTimestampDesc(device.getId(), start, end);
+        } else {
+            logs = energyLogRepository.findByDeviceIdOrderByTimestampDesc(device.getId());
+        }
+
+        return logs.stream()
+                .map(this::mapToEnergyLogDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public EnergyUsageLogResponseDto createDeviceEnergyLog(String email, Long deviceId, EnergyUsageLogCreateRequestDto request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        ensureNotTechnician(user);
         Device device = findOwnedDevice(email, deviceId);
 
         Double cost = request.getCost();
@@ -212,7 +243,7 @@ log.info("Energy log created for device {}: {} kWh", device.getName(), energyUse
                 .durationMinutes(durationMinutes)
                 .build();
 energyLogRepository.save(energyLog);
-log.info("Energy log created for device {}: {} kWh (${} cost)", device.getName(), energyUsed, cost);
+log.info("Energy log created for device {}: {} kWh (₹{} cost)", device.getName(), energyUsed, cost);
     }
 
     // ========== MAPPERS ==========
@@ -247,5 +278,16 @@ log.info("Energy log created for device {}: {} kWh (${} cost)", device.getName()
 
         return deviceRepository.findByIdAndUserId(deviceId, user.getId())
                 .orElseThrow(() -> new RuntimeException("Device not found or access denied"));
+    }
+
+    private Device findUserDevice(Long userId, Long deviceId) {
+        return deviceRepository.findByIdAndUserId(deviceId, userId)
+                .orElseThrow(() -> new RuntimeException("Device not found or access denied"));
+    }
+
+    private void ensureNotTechnician(User user) {
+        if (user.getRole() == User.Role.TECHNICIAN) {
+            throw new RuntimeException("Technician accounts are read-only for devices");
+        }
     }
 }

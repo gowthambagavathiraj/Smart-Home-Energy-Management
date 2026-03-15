@@ -6,9 +6,13 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminUserDashboard from './pages/AdminUserDashboard';
+import TechnicianDashboard from './pages/TechnicianDashboardNew';
+import TechnicianUserDashboard from './pages/TechnicianUserDashboard';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import DevicesPage from './pages/DevicesPage';
+import AboutPage from './pages/AboutPage';
 
 function App() {
   return (
@@ -29,9 +33,29 @@ function App() {
               <AdminDashboard />
             </ProtectedRoute>
           } />
+          <Route path="/admin/users/:userId/dashboard" element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminUserDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/technician/dashboard" element={
+            <ProtectedRoute requiredRole="TECHNICIAN">
+              <TechnicianDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/technician/users/:userId/dashboard" element={
+            <ProtectedRoute requiredRole="TECHNICIAN">
+              <TechnicianUserDashboard />
+            </ProtectedRoute>
+          } />
           <Route path="/devices" element={
             <ProtectedRoute>
               <DevicesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/about" element={
+            <ProtectedRoute>
+              <AboutPage />
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/login" replace />} />

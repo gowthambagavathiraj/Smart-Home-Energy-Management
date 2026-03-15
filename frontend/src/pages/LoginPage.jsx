@@ -10,6 +10,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [particles, setParticles] = useState([]);
+  const [googleOnlyHint, setGoogleOnlyHint] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -19,7 +20,13 @@ const LoginPage = () => {
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
-          navigate(parsedUser.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard');
+          if (parsedUser.role === 'ADMIN') {
+            navigate('/admin/dashboard');
+          } else if (parsedUser.role === 'TECHNICIAN') {
+            navigate('/technician/dashboard');
+          } else {
+            navigate('/dashboard');
+          }
           return;
         } catch (e) {
           // no-op
@@ -53,6 +60,7 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setGoogleOnlyHint(false);
 
     if (!validatePassword(formData.password)) {
       setError('Password must contain only letters and numbers (no special characters)');
@@ -63,9 +71,21 @@ const LoginPage = () => {
     try {
       const response = await authService.login(formData);
       login(response.token, response.user);
-      navigate(response.user?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard');
+      if (response.user?.role === 'ADMIN') {
+        navigate('/admin/dashboard');
+      } else if (response.user?.role === 'TECHNICIAN') {
+        navigate('/technician/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
-      setError(err.message || 'Invalid email or password');
+      const message = err.message || 'Invalid email or password';
+      if (message.toLowerCase().includes('google sign-in')) {
+        setGoogleOnlyHint(true);
+        setError('');
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -129,27 +149,23 @@ const LoginPage = () => {
           </div>
 
           <div className="panel-content">
-            <h1 className="panel-headline">Control Your<br /><span className="highlight-text">Energy Future</span></h1>
+            <h1 className="panel-headline">Welcome to<br /><span className="highlight-text">SmartHome</span></h1>
             <p className="panel-description">
-              Intelligent monitoring and control of your home's energy systems. Save power, reduce costs, and live smarter.
+              Manage energy with clarity, automate smart devices, and make every unit count.
             </p>
             <div className="feature-list">
-              {['Real-time energy monitoring', 'Smart device automation', 'Cost optimization AI', 'Carbon footprint tracking'].map((f, i) => (
+              {[
+                '“What gets measured gets managed.”',
+                '“Save power today, secure energy tomorrow.”',
+                '“Efficiency is the cheapest energy.”',
+                '“Smart use is sustainable use.”',
+              ].map((f, i) => (
                 <div key={i} className="feature-item" style={{ animationDelay: `${i * 0.15}s` }}>
                   <div className="feature-dot" />
                   <span>{f}</span>
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="panel-stats">
-            {[{ val: '40%', label: 'Avg. Savings' }, { val: '2.4M', label: 'Homes Connected' }, { val: '99.9%', label: 'Uptime' }].map((s, i) => (
-              <div key={i} className="stat-item">
-                <div className="stat-value">{s.val}</div>
-                <div className="stat-label">{s.label}</div>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -161,7 +177,7 @@ const LoginPage = () => {
               <p className="form-subtitle">Sign in to your smart home hub</p>
             </div>
 
-            {error && (
+            {error && !googleOnlyHint && (
               <div className="error-banner">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
@@ -266,6 +282,11 @@ const LoginPage = () => {
                 </svg>
                 Sign in with Google
               </button>
+              {googleOnlyHint && (
+                <div className="google-hint">
+                  This account uses Google Sign-In. Please use the Google button above.
+                </div>
+              )}
             </form>
 
             <p className="redirect-text">

@@ -20,5 +20,7 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
 
     List<Device> findByStatus(String status);
 
+    void deleteByUserId(Long userId);
+
     void deleteByIdAndUserId(Long id, Long userId);
 }

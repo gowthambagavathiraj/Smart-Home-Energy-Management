@@ -103,6 +103,45 @@ CREATE TABLE IF NOT EXISTS energy_usage_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- DEVICE SCHEDULES TABLE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS device_schedules (
+    id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+    device_id     BIGINT   NOT NULL,
+    user_id       BIGINT   NOT NULL,
+    action        VARCHAR(10) NOT NULL, -- ON/OFF
+    schedule_time TIME     NOT NULL,
+    days_of_week  VARCHAR(64), -- MON,TUE,WED or empty for everyday
+    enabled       BOOLEAN  NOT NULL DEFAULT TRUE,
+    next_run_at   DATETIME,
+    created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME,
+
+    CONSTRAINT fk_schedules_device FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE,
+    CONSTRAINT fk_schedules_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_schedules_user_id (user_id),
+    INDEX idx_schedules_device_id (device_id),
+    INDEX idx_schedules_next_run (next_run_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- NOTIFICATIONS TABLE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS notifications (
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id    BIGINT NOT NULL,
+    type       VARCHAR(20) NOT NULL, -- ALERT/INFO/RECOMMENDATION
+    title      VARCHAR(120) NOT NULL,
+    message    VARCHAR(500) NOT NULL,
+    is_read    BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_notifications_user_id (user_id),
+    INDEX idx_notifications_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- VERIFICATION: Check tables created
 -- ============================================================
 SHOW TABLES;
@@ -111,3 +150,5 @@ DESCRIBE email_verification_tokens;
 DESCRIBE password_reset_tokens;
 DESCRIBE devices;
 DESCRIBE energy_usage_logs;
+DESCRIBE device_schedules;
+DESCRIBE notifications;

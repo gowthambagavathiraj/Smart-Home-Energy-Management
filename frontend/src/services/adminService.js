@@ -35,6 +35,63 @@ export const adminService = {
     return handleResponse(response);
   },
 
+  getUser: async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getUserDevices: async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/devices`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getUserEnergyLogs: async (userId, deviceId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/devices/${deviceId}/energy-logs`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getUserRealtimeUsage: async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/energy/realtime`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getUserConsumption: async (userId, period = 'hourly', points = 12) => {
+    const params = new URLSearchParams({ period, points: String(points) });
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/energy/consumption?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getUserAnalytics: async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/energy/analytics`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getUserNotifications: async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/notifications`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getUserRecommendations: async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/recommendations`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   updateUser: async (userId, payload) => {
     const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
       method: 'PUT',
