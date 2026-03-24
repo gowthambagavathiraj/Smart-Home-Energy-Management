@@ -15,6 +15,21 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check for Google OAuth redirect with verification requirement
+    const params = new URLSearchParams(window.location.search);
+    const needsVerification = params.get('needsVerification');
+    const email = params.get('email');
+    const message = params.get('message');
+    
+    if (needsVerification === 'true' && email) {
+      setError(message || 'Please verify your email to continue');
+      // Store email for verification
+      sessionStorage.setItem('pendingVerificationEmail', email);
+      // Redirect to register page for email verification
+      navigate(`/register?email=${encodeURIComponent(email)}&verify=true&google=true`);
+      return;
+    }
+
     if (isAuthenticated) {
       const storedUser = localStorage.getItem('user_data');
       if (storedUser) {

@@ -17,6 +17,8 @@ public class UserResponseDto {
     private String provider;
     private String role;
     private boolean active;
+    private boolean assignedByTechnician;
     private boolean emailVerified;
     private Long loginCount;
+    private java.time.LocalDateTime createdAt;
 }

@@ -112,7 +112,18 @@ const RegisterPage = () => {
       setSuccess(true);
       setVerificationRequired(false);
       setVerificationMessage(response.message || 'Email verified successfully.');
-      setTimeout(() => navigate('/login'), 2500);
+      
+      // Check if this is a Google OAuth user
+      const params = new URLSearchParams(window.location.search);
+      const isGoogleUser = params.get('google') === 'true';
+      
+      if (isGoogleUser) {
+        // Redirect to role selection for Google users
+        setTimeout(() => navigate('/select-role'), 1500);
+      } else {
+        // Redirect to login for regular users
+        setTimeout(() => navigate('/login'), 2500);
+      }
     } catch (err) {
       setVerificationError(err.message || 'Verification failed. Please try again.');
     } finally {

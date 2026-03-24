@@ -33,6 +33,14 @@ export const technicianService = {
     return handleResponse(response);
   },
 
+  assignUser: async (userId) => {
+    const response = await fetch(`${API_BASE_URL}/technician/users/${userId}/assign`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   getUser: async (userId) => {
     const response = await fetch(`${API_BASE_URL}/technician/users/${userId}`, {
       headers: getAuthHeaders(),

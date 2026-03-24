@@ -141,4 +141,13 @@ public class TechnicianController {
         String email = authentication.getName();
         return ResponseEntity.ok(technicianService.getInstallationRequests(email));
     }
+
+    @PostMapping("/users/{userId}/assign")
+    public ResponseEntity<UserResponseDto> assignUser(
+            @PathVariable Long userId,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(technicianService.assignUser(email, userId));
+    }
 }

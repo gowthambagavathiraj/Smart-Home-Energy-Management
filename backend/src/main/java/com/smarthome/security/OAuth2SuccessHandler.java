@@ -3,6 +3,7 @@ package com.smarthome.security;
 import com.smarthome.model.User;
 import com.smarthome.repository.UserRepository;
 import com.smarthome.service.AdminRoleService;
+import com.smarthome.service.EmailService;
 import com.smarthome.service.LoginAuditService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +27,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final UserRepository userRepository;
     private final AdminRoleService adminRoleService;
     private final LoginAuditService loginAuditService;
+    private final EmailService emailService;
 
     @Value("${app.oauth2.redirect-uri}")
     private String frontendRedirectUri;
@@ -51,21 +53,38 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         if (existingUser.isPresent()) {
             user = existingUser.get();
             user.setRole(adminRoleService.resolveRoleByEmail(email, user.getRole()));
-            user.setEmailVerified(true);
+            // Don't auto-verify existing users - require email verification
             userRepository.save(user);
+            
+            // Send verification email for existing users too
+            if (!user.isEmailVerified()) {
+                try {
+                    emailService.sendVerificationEmail(user);
+                } catch (Exception e) {
+                    System.err.println("Failed to send verification email: " + e.getMessage());
+                }
+            }
         } else {
-            // New Google user — default role is HOMEOWNER
+            // New Google user — default role is HOMEOWNER (will be updated after verification)
             user = User.builder()
                     .email(email)
                     .firstName(firstName != null ? firstName : "Google")
                     .lastName(lastName != null ? lastName : "User")
                     .provider(User.AuthProvider.GOOGLE)
                     .providerId(providerId)
-                    .role(adminRoleService.resolveRoleByEmail(email, User.Role.HOMEOWNER))
+                    .role(User.Role.HOMEOWNER)  // Temporary role, will be set after verification
                     .active(true)
-                    .emailVerified(true)
+                    .emailVerified(false)  // Require email verification
                     .build();
-            userRepository.save(user);
+            user = userRepository.save(user);
+            
+            // Send verification email for new Google users
+            try {
+                emailService.sendVerificationEmail(user);
+            } catch (Exception e) {
+                // Log error but don't fail the login
+                System.err.println("Failed to send verification email: " + e.getMessage());
+            }
         }
 
         loginAuditService.registerSuccessfulLogin(user);
@@ -73,16 +92,29 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // Generate JWT token
         String token = jwtUtil.generateToken(email);
 
-        // Redirect to frontend dashboard with token and user info
-        String redirectUrl = UriComponentsBuilder
-                .fromUriString(frontendRedirectUri + "/dashboard")
-                .queryParam("token", token)
-                .queryParam("firstName", user.getFirstName())
-                .queryParam("lastName", user.getLastName())
-                .queryParam("email", user.getEmail())
-                .queryParam("role", user.getRole().name())
-                .queryParam("provider", user.getProvider().name())
-                .build().toUriString();
+        // Redirect based on email verification status
+        String redirectUrl;
+        if (!user.isEmailVerified()) {
+            // Redirect to email verification page for unverified users
+            redirectUrl = UriComponentsBuilder
+                    .fromUriString(frontendRedirectUri + "/login")
+                    .queryParam("token", token)
+                    .queryParam("email", user.getEmail())
+                    .queryParam("needsVerification", "true")
+                    .queryParam("message", "Please verify your email to continue")
+                    .build().toUriString();
+        } else {
+            // Redirect to dashboard for verified users
+            redirectUrl = UriComponentsBuilder
+                    .fromUriString(frontendRedirectUri + "/dashboard")
+                    .queryParam("token", token)
+                    .queryParam("firstName", user.getFirstName())
+                    .queryParam("lastName", user.getLastName())
+                    .queryParam("email", user.getEmail())
+                    .queryParam("role", user.getRole().name())
+                    .queryParam("provider", user.getProvider().name())
+                    .build().toUriString();
+        }
 
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }

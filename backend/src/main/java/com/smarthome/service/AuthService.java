@@ -392,4 +392,34 @@ public class AuthService {
         emailVerificationTokenRepository.deleteExpiredTokens(LocalDateTime.now());
         log.debug("Cleaned up expired password reset tokens");
     }
+
+    // ========== UPDATE USER ROLE ==========
+    @Transactional
+    public AuthResponseDto updateUserRole(String email, String roleStr) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.isEmailVerified()) {
+            throw new RuntimeException("Email must be verified before selecting role");
+        }
+
+        User.Role role = User.Role.valueOf(roleStr);
+        user.setRole(role);
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(email);
+
+        return AuthResponseDto.builder()
+                .token(token)
+                .user(UserResponseDto.builder()
+                        .id(user.getId())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .role(user.getRole().name())
+                        .active(user.isActive())
+                        .emailVerified(user.isEmailVerified())
+                        .build())
+                .build();
+    }
 }

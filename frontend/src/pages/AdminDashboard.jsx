@@ -369,7 +369,7 @@ const AdminDashboard = () => {
                                   className="view-dashboard-btn-small" 
                                   onClick={() => {
                                     if (u.role === 'TECHNICIAN') {
-                                      navigate('/technician/dashboard');
+                                      navigate(`/admin/technicians/${u.id}/dashboard`);
                                     } else {
                                       navigate(`/admin/users/${u.id}/dashboard`);
                                     }

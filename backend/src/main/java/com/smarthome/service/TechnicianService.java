@@ -293,4 +293,29 @@ public class TechnicianService {
                 .updatedAt(device.getUpdatedAt())
                 .build();
     }
+
+    public UserResponseDto assignUser(String email, Long userId) {
+        requireTechnician(email);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (user.getRole() != User.Role.HOMEOWNER) {
+            throw new RuntimeException("Can only assign homeowners");
+        }
+        
+        user.setAssignedByTechnician(true);
+        user = userRepository.save(user);
+        
+        return UserResponseDto.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .active(user.isActive())
+                .assignedByTechnician(user.isAssignedByTechnician())
+                .emailVerified(user.isEmailVerified())
+                .createdAt(user.getCreatedAt())
+                .build();
+    }
 }

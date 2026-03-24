@@ -4,9 +4,11 @@ import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import RoleSelectionPage from './pages/RoleSelectionPage';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUserDashboard from './pages/AdminUserDashboard';
+import AdminTechnicianDashboard from './pages/AdminTechnicianDashboard';
 import TechnicianDashboard from './pages/TechnicianDashboardNew';
 import TechnicianUserDashboard from './pages/TechnicianUserDashboard';
 import { AuthProvider } from './context/AuthContext';
@@ -23,6 +25,11 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/select-role" element={
+            <ProtectedRoute>
+              <RoleSelectionPage />
+            </ProtectedRoute>
+          } />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
@@ -36,6 +43,11 @@ function App() {
           <Route path="/admin/users/:userId/dashboard" element={
             <ProtectedRoute requiredRole="ADMIN">
               <AdminUserDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/technicians/:userId/dashboard" element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminTechnicianDashboard />
             </ProtectedRoute>
           } />
           <Route path="/technician/dashboard" element={

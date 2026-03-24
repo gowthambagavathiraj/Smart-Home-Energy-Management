@@ -87,4 +87,21 @@ public class AuthController {
         ApiResponseDto response = authService.resendEmailVerification(request);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * POST /api/auth/select-role
+     * Select user role after email verification (for Google OAuth users)
+     */
+    @PostMapping("/select-role")
+    public ResponseEntity<AuthResponseDto> selectRole(@Valid @RequestBody Map<String, String> request, Authentication authentication) {
+        String email = authentication.getName();
+        String role = request.get("role");
+        
+        if (role == null || (!role.equals("HOMEOWNER") && !role.equals("TECHNICIAN"))) {
+            throw new RuntimeException("Invalid role. Must be HOMEOWNER or TECHNICIAN");
+        }
+        
+        AuthResponseDto response = authService.updateUserRole(email, role);
+        return ResponseEntity.ok(response);
+    }
 }

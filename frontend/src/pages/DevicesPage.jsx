@@ -9,6 +9,7 @@ const DevicesPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isTechnician = user?.role === 'TECHNICIAN';
+  const isDeactivated = user?.active === false;
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -50,6 +51,10 @@ const DevicesPage = () => {
   };
 
   const handleOpenModal = (device = null) => {
+    if (isDeactivated) {
+      alert('Your account is deactivated. You cannot perform this operation.');
+      return;
+    }
     if (device) {
       setEditingDevice(device);
       setFormData({
@@ -73,6 +78,10 @@ const DevicesPage = () => {
   };
 
   const handleOpenSchedule = async (device) => {
+    if (isDeactivated) {
+      alert('Your account is deactivated. You cannot perform this operation.');
+      return;
+    }
     setScheduleDevice(device);
     setScheduleForm({ action: 'ON', time: '18:00', days: [], enabled: true });
     try {
@@ -140,6 +149,10 @@ const DevicesPage = () => {
   };
 
   const handleDelete = async (deviceId) => {
+    if (isDeactivated) {
+      alert('Your account is deactivated. You cannot perform this operation.');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this device?')) return;
     
     try {
@@ -151,6 +164,10 @@ const DevicesPage = () => {
   };
 
   const handleToggle = async (deviceId) => {
+    if (isDeactivated) {
+      alert('Your account is deactivated. You cannot perform this operation.');
+      return;
+    }
     try {
       await deviceService.toggleDevice(deviceId);
       await fetchDevices();
@@ -201,7 +218,7 @@ const DevicesPage = () => {
           <p className="page-subtitle">Manage your smart home devices</p>
           </div>
         </div>
-        {!isTechnician && (
+        {!isTechnician && !isDeactivated && (
           <button className="btn-primary" onClick={() => handleOpenModal()}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
@@ -214,6 +231,12 @@ const DevicesPage = () => {
       {isTechnician && (
         <div className="info-banner">
           Technician access is read-only. Device changes are disabled.
+        </div>
+      )}
+
+      {isDeactivated && (
+        <div className="deactivation-banner">
+          ⚠️ Your account is deactivated. You cannot perform any CRUD operations until your account is reactivated.
         </div>
       )}
 
@@ -247,7 +270,7 @@ const DevicesPage = () => {
                     className="icon-btn"
                     onClick={() => handleOpenModal(device)}
                     title="Edit device"
-                    disabled={isTechnician}
+                    disabled={isTechnician || isDeactivated}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
@@ -257,7 +280,7 @@ const DevicesPage = () => {
                     className="icon-btn delete-btn"
                     onClick={() => handleDelete(device.id)}
                     title="Delete device"
-                    disabled={isTechnician}
+                    disabled={isTechnician || isDeactivated}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -267,7 +290,7 @@ const DevicesPage = () => {
                     className="icon-btn"
                     onClick={() => handleOpenSchedule(device)}
                     title="Schedule device"
-                    disabled={isTechnician}
+                    disabled={isTechnician || isDeactivated}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 8v5l4 2 .75-1.23-3.25-1.77V8H12zm0-6C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
@@ -298,7 +321,7 @@ const DevicesPage = () => {
                     type="checkbox"
                     checked={device.status === 'ON'}
                     onChange={() => handleToggle(device.id)}
-                    disabled={isTechnician}
+                    disabled={isTechnician || isDeactivated}
                   />
                   <span className="toggle-slider" />
                 </label>

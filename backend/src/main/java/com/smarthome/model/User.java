@@ -46,6 +46,10 @@ public class User {
     @Builder.Default
     private boolean active = true;
 
+    @Column(name = "assigned_by_technician")
+    @Builder.Default
+    private boolean assignedByTechnician = false;
+
     @Column(name = "email_verified", nullable = false)
     @Builder.Default
     private boolean emailVerified = false;

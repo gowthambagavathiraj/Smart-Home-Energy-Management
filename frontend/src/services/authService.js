@@ -111,6 +111,15 @@ export const authService = {
     return handleResponse(response);
   },
 
+  selectRole: async (role) => {
+    const response = await fetch(`${API_BASE_URL}/auth/select-role`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ role }),
+    });
+    return handleResponse(response);
+  },
+
   logout: () => {
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('user_data');

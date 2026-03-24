@@ -72,6 +72,7 @@ const TechnicianDashboardNew = () => {
         firstName: response.firstName,
         lastName: response.lastName,
       });
+      alert('Profile saved successfully!');
       setShowProfileModal(false);
     } catch (err) {
       setError(err.message || 'Failed to update profile');
@@ -89,6 +90,37 @@ const TechnicianDashboardNew = () => {
       navigate('/login');
     } catch (err) {
       setError(err.message || 'Failed to delete account');
+    }
+  };
+
+  const handleDeactivateAccount = async () => {
+    const isCurrentlyActive = user?.active !== false;
+    const confirmMessage = isCurrentlyActive 
+      ? 'Deactivate your account? You will not be able to perform any operations until reactivated.'
+      : 'Activate your account? You will be able to use all features again.';
+    
+    const confirmed = window.confirm(confirmMessage);
+    if (!confirmed) return;
+    
+    try {
+      const response = await authService.updateProfile({ 
+        firstName: user.firstName,
+        lastName: user.lastName,
+        active: !isCurrentlyActive 
+      });
+      
+      // Update user context with new active status
+      updateUser({ ...response, active: !isCurrentlyActive });
+      setShowProfileModal(false);
+      
+      // Show success message
+      if (!isCurrentlyActive) {
+        alert('Account activated successfully!');
+      } else {
+        alert('Account deactivated successfully!');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to update account status');
     }
   };
 
@@ -295,57 +327,90 @@ const TechnicianDashboardNew = () => {
     );
   };
 
-  const renderInstallation = () => (
-    <div className="dash-panels">
-      <div className="panel panel-full">
-        <div className="panel-head">
-          <h2 className="panel-title">Installation Requests</h2>
-          <span className="panel-badge">{installationRequests.length} pending</span>
-        </div>
-        <div className="device-control-list">
-          {installationRequests.map((req) => {
-            const isExpanded = expandedUsers[req.userId];
-            return (
-              <div key={req.userId}>
-                <div className="device-control-row" style={{ background: 'rgba(139,92,246,0.05)', cursor: 'pointer' }} onClick={() => toggleUser(req.userId)}>
-                  <div className="device-control-meta">
-                    <span className="device-control-icon">👤</span>
-                    <div>
-                      <div className="device-control-name">{req.userName}</div>
-                      <div className="device-control-sub">{req.userEmail} • Requested: {new Date(req.requestDate).toLocaleDateString()}</div>
-                    </div>
-                  </div>
-                  <div className="device-control-actions">
-                    <span className="device-control-monitor">{isExpanded ? '▼' : '▶'}</span>
-                    <button className="device-control-toggle" onClick={(e) => { e.stopPropagation(); navigate(`/technician/users/${req.userId}/dashboard`); }}>
-                      View Dashboard
-                    </button>
-                  </div>
-                </div>
-                {isExpanded && (
-                  <div className="device-control-row" style={{ marginLeft: '2rem', background: 'rgba(255,255,255,0.02)' }}>
+  const renderInstallation = () => {
+    return (
+      <div className="dash-panels">
+        <div className="panel panel-full">
+          <div className="panel-head">
+            <h2 className="panel-title">Registered Users & Devices</h2>
+            <span className="panel-badge">{users.length} users</span>
+          </div>
+          <div className="device-control-list">
+            {users.map((user) => {
+              const isExpanded = expandedUsers[user.id];
+              const userDevices = allDevices.filter(d => d.userId === user.id);
+              const installationReq = installationRequests.find(req => req.userId === user.id);
+              
+              return (
+                <div key={user.id}>
+                  <div className="device-control-row" style={{ background: 'rgba(139,92,246,0.05)', cursor: 'pointer' }} onClick={() => toggleUser(user.id)}>
                     <div className="device-control-meta">
-                      <span className="device-control-icon">🏗️</span>
+                      <span className="device-control-icon">👤</span>
                       <div>
-                        <div className="device-control-name">Installation Details</div>
+                        <div className="device-control-name">{user.firstName} {user.lastName}</div>
                         <div className="device-control-sub">
-                          Device Type: {req.requestedDeviceType} • Address: {req.address} • Status: {req.status}
+                          {user.email} • {userDevices.length} device{userDevices.length !== 1 ? 's' : ''} • 
+                          Registered: {new Date(user.createdAt || Date.now()).toLocaleDateString()}
                         </div>
                       </div>
                     </div>
                     <div className="device-control-actions">
-                      <button className="device-control-toggle">Assign</button>
+                      <span className="device-control-monitor">{isExpanded ? '▼' : '▶'}</span>
                     </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
-          {installationRequests.length === 0 && <p className="muted">No installation requests</p>}
+                  {isExpanded && userDevices.length > 0 && (
+                    <div style={{ marginLeft: '2rem', background: 'rgba(255,255,255,0.01)', padding: '0.5rem 0' }}>
+                      {userDevices.map((device) => (
+                        <div key={device.deviceId} className="device-control-row" style={{ background: 'rgba(255,255,255,0.02)', marginBottom: '0.5rem' }}>
+                          <div className="device-control-meta">
+                            <span className="device-control-icon">{device.deviceType === 'AC' ? '❄️' : device.deviceType === 'Light' ? '💡' : '⚡'}</span>
+                            <div>
+                              <div className="device-control-name">{device.deviceName}</div>
+                              <div className="device-control-sub">{device.deviceType} • {device.room || 'No room'}</div>
+                            </div>
+                          </div>
+                          <div className="device-control-actions">
+                            <span className={`device-control-status ${device.status === 'ON' ? 'status-on' : 'status-off'}`}>
+                              {device.status === 'ON' ? 'Online' : 'Offline'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {isExpanded && userDevices.length === 0 && (
+                    <div className="device-control-row" style={{ marginLeft: '2rem', background: 'rgba(255,255,255,0.02)' }}>
+                      <div className="device-control-meta">
+                        <span className="device-control-icon">📭</span>
+                        <div>
+                          <div className="device-control-name">No Devices</div>
+                          <div className="device-control-sub">This user hasn't added any devices yet</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {isExpanded && installationReq && (
+                    <div className="device-control-row" style={{ marginLeft: '2rem', background: 'rgba(255,255,255,0.02)', marginTop: '0.5rem' }}>
+                      <div className="device-control-meta">
+                        <span className="device-control-icon">🏗️</span>
+                        <div>
+                          <div className="device-control-name">Installation Details</div>
+                          <div className="device-control-sub">
+                            Device Type: {installationReq.requestedDeviceType} • Address: {installationReq.address} • Status: {installationReq.status}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {users.length === 0 && <p className="muted">No users found</p>}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="dashboard">
@@ -389,6 +454,9 @@ const TechnicianDashboardNew = () => {
               <button className="modal-btn modal-btn-save" onClick={handleProfileSave} disabled={profileSaving}>
                 {profileSaving ? 'Saving...' : 'Save Changes'}
               </button>
+              <button className="modal-btn modal-btn-deactivate" onClick={handleDeactivateAccount} style={{ background: user?.active === false ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'linear-gradient(135deg, #fb923c, #f97316)', color: '#fff' }}>
+                {user?.active === false ? 'Activate Account' : 'Deactivate Account'}
+              </button>
               <button className="modal-btn modal-btn-delete" onClick={handleDeleteAccount}>
                 Delete Account
               </button>
@@ -425,7 +493,7 @@ const TechnicianDashboardNew = () => {
             { id: 'overview', label: 'Overview', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
             { id: 'devices', label: 'Devices', icon: 'M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18' },
             { id: 'health', label: 'Device Health', icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' },
-            { id: 'installation', label: 'Installation', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+            { id: 'installation', label: 'Users & Devices', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
           ].map((item) => (
             <button key={item.id} onClick={() => setActiveTab(item.id)} className={`nav-item ${activeTab === item.id ? 'active' : ''}`}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
