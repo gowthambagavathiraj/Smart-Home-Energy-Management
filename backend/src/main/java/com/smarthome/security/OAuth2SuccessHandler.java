@@ -1,6 +1,8 @@
 package com.smarthome.security;
 
 import com.smarthome.model.User;
+import com.smarthome.model.EmailVerificationToken;
+import com.smarthome.repository.EmailVerificationTokenRepository;
 import com.smarthome.repository.UserRepository;
 import com.smarthome.service.AdminRoleService;
 import com.smarthome.service.EmailService;
@@ -17,6 +19,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Component
@@ -25,12 +29,16 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final AdminRoleService adminRoleService;
     private final LoginAuditService loginAuditService;
     private final EmailService emailService;
 
     @Value("${app.oauth2.redirect-uri}")
     private String frontendRedirectUri;
+
+    @Value("${app.reset-code.expiry-ms:600000}")
+    private long resetCodeExpiryMs;
 
     @Override
     public void onAuthenticationSuccess(
@@ -59,7 +67,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             // Send verification email for existing users too
             if (!user.isEmailVerified()) {
                 try {
-                    emailService.sendVerificationEmail(user);
+                    sendVerificationCode(user);
                 } catch (Exception e) {
                     System.err.println("Failed to send verification email: " + e.getMessage());
                 }
@@ -80,7 +88,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             
             // Send verification email for new Google users
             try {
-                emailService.sendVerificationEmail(user);
+                sendVerificationCode(user);
             } catch (Exception e) {
                 // Log error but don't fail the login
                 System.err.println("Failed to send verification email: " + e.getMessage());
@@ -117,5 +125,26 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
 
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+    }
+
+    private void sendVerificationCode(User user) {
+        emailVerificationTokenRepository.deleteAllByEmail(user.getEmail());
+        String code = generateSixDigitCode();
+        LocalDateTime expiresAt = LocalDateTime.now().plusNanos(resetCodeExpiryMs * 1_000_000L);
+
+        EmailVerificationToken token = EmailVerificationToken.builder()
+                .email(user.getEmail())
+                .code(code)
+                .expiresAt(expiresAt)
+                .used(false)
+                .build();
+        emailVerificationTokenRepository.save(token);
+        emailService.sendEmailVerificationCode(user.getEmail(), user.getFirstName(), code);
+    }
+
+    private String generateSixDigitCode() {
+        SecureRandom random = new SecureRandom();
+        int code = 100000 + random.nextInt(900000);
+        return String.valueOf(code);
     }
 }

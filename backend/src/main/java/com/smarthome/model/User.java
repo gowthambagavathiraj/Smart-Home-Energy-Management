@@ -48,7 +48,7 @@ public class User {
 
     @Column(name = "assigned_by_technician")
     @Builder.Default
-    private boolean assignedByTechnician = false;
+    private Boolean assignedByTechnician = false;
 
     @Column(name = "email_verified", nullable = false)
     @Builder.Default
@@ -71,6 +71,13 @@ public class User {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (assignedByTechnician == null) {
+            assignedByTechnician = false;
+        }
     }
 
     public enum AuthProvider {

@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
     provider_id VARCHAR(255),                    -- Google sub ID
     role        ENUM('HOMEOWNER', 'TECHNICIAN', 'ADMIN') NOT NULL DEFAULT 'HOMEOWNER',
     is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+    assigned_by_technician BOOLEAN NOT NULL DEFAULT FALSE,
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     login_count BIGINT NOT NULL DEFAULT 0,
     last_login_at DATETIME,

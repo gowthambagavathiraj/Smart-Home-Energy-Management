@@ -313,7 +313,7 @@ public class TechnicianService {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .active(user.isActive())
-                .assignedByTechnician(user.isAssignedByTechnician())
+                .assignedByTechnician(Boolean.TRUE.equals(user.getAssignedByTechnician()))
                 .emailVerified(user.isEmailVerified())
                 .createdAt(user.getCreatedAt())
                 .build();
